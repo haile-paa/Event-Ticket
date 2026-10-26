@@ -1,0 +1,32 @@
+# Starts MongoDB and the Go API. Run the two websites with npm (see README) or build them for hosting.
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      PORT: "8080"
+      MONGO_URI: "mongodb://mongo:27017"
+      MONGO_DB: "tikit"
+      ADMIN_PIN: "2468"          # the organizer's PIN; you can reset it from the Studio
+      DEV_KEY: "change-me-long-secret"   # YOUR secret key for the Studio (never share it)
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002"
+      SEED_DEMO: "true"          # demo events on first run; set to "false" for a real client
+      UPLOAD_DIR: "/data/uploads"
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "8080:8080"
+
+volumes:
+  mongo-data:
+  uploads:

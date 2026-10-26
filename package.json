@@ -1,0 +1,17 @@
+{
+  "name": "tikit",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Tikit - event ticketing for Ethiopia (customer site, admin site, Go API)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:customer": "npm run dev -w @tikit/customer",
+    "dev:admin": "npm run dev -w @tikit/admin",
+    "dev:studio": "npm run dev -w @tikit/studio",
+    "build": "npm run build -w @tikit/customer && npm run build -w @tikit/admin && npm run build -w @tikit/studio",
+    "typecheck": "npm run typecheck -w @tikit/customer && npm run typecheck -w @tikit/admin && npm run typecheck -w @tikit/studio"
+  }
+}
