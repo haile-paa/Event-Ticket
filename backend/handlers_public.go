@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -236,19 +235,19 @@ func (a *App) createOrder(w http.ResponseWriter, r *http.Request) {
 
 	// --- store the proof image (if any) before touching stock ---
 	proof := Proof{SMSText: sms}
-	proofPath := ""
+	proofID := ""
 	if fileErr == nil {
-		name, err := saveImage(file, filepath.Join(a.cfg.UploadDir, "proofs"), false)
+		id, err := a.storeImage(ctx, file, "proofs/", false)
 		if err != nil {
 			writeError(w, 400, err.Error())
 			return
 		}
-		proof.ImageURL = "/uploads/proofs/" + name
-		proofPath = filepath.Join(a.cfg.UploadDir, "proofs", name)
+		proof.ImageURL = "/uploads/" + id
+		proofID = id
 	}
 	cleanup := func() {
-		if proofPath != "" {
-			_ = os.Remove(proofPath)
+		if proofID != "" {
+			a.deleteFile(ctx, proofID)
 		}
 	}
 

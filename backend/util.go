@@ -4,12 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/json"
-	"errors"
-	"io"
 	"net"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -161,67 +157,3 @@ func (l *limiter) add(key string) {
 }
 
 // ---------- image upload ----------
-
-var allowedImages = map[string]string{
-	"image/jpeg": ".jpg",
-	"image/png":  ".png",
-	"image/webp": ".webp",
-	"image/gif":  ".gif",
-}
-
-// saveImage validates the real content type (not the file name) and stores the file
-// under an unguessable random name. It returns the stored file name.
-func saveImage(src io.Reader, dir string, allowSVG bool) (string, error) {
-	head := make([]byte, 512)
-	n, err := io.ReadFull(src, head)
-	if err != nil && !errors.Is(err, io.ErrUnexpectedEOF) && !errors.Is(err, io.EOF) {
-		return "", err
-	}
-	head = head[:n]
-	ct := http.DetectContentType(head)
-	ext, ok := allowedImages[ct]
-	if !ok && allowSVG && (strings.HasPrefix(ct, "text/xml") || strings.HasPrefix(ct, "text/plain")) &&
-		strings.Contains(strings.ToLower(string(head)), "<svg") {
-		ext, ok = ".svg", true
-	}
-	if !ok {
-		return "", errors.New("unsupported image type, please use JPG, PNG, WEBP or GIF")
-	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
-	}
-	name := randToken(16) + ext
-	f, err := os.OpenFile(filepath.Join(dir, name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	if _, err := f.Write(head); err != nil {
-		return "", err
-	}
-	if _, err := io.Copy(f, src); err != nil {
-		_ = os.Remove(filepath.Join(dir, name))
-		return "", err
-	}
-	return name, nil
-}
-
-// noListFS stops http.FileServer from listing directories.
-type noListFS struct{ fs http.FileSystem }
-
-func (n noListFS) Open(name string) (http.File, error) {
-	f, err := n.fs.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	st, err := f.Stat()
-	if err != nil {
-		_ = f.Close()
-		return nil, err
-	}
-	if st.IsDir() {
-		_ = f.Close()
-		return nil, os.ErrNotExist
-	}
-	return f, nil
-}

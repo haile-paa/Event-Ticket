@@ -361,12 +361,12 @@ func (a *App) adminUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	name, err := saveImage(file, a.cfg.UploadDir, true)
+	id, err := a.storeImage(r.Context(), file, "", true)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}
-	writeJSON(w, 201, map[string]string{"url": "/uploads/" + name})
+	writeJSON(w, 201, map[string]string{"url": "/uploads/" + id})
 }
 
 // ---------- attendance & check-in ----------

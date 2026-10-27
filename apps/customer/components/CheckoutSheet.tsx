@@ -12,6 +12,7 @@ import {
   type PayMethod,
   type TierName,
   type TikitEvent,
+  shrinkImage,
 } from "@tikit/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, ClipboardPaste, Copy, ImagePlus, Landmark, Lock, MessageSquareText, Smartphone, Upload, X } from "lucide-react";
@@ -118,9 +119,11 @@ export function CheckoutSheet({ event, selection, onClose }: { event: TikitEvent
   const phoneOk = /^\+?\d{9,15}$/.test(cleanPhone);
   const nameOk = name.trim().length >= 2;
 
-  const pickFile = useCallback((f: File | undefined | null) => {
-    if (!f) return;
-    if (!f.type.startsWith("image/")) return setErr("Please choose an image (a screenshot of your payment).");
+  const pickFile = useCallback(async (picked: File | undefined | null) => {
+    if (!picked) return;
+    if (!picked.type.startsWith("image/")) return setErr("Please choose an image (a screenshot of your payment).");
+    if (picked.size > 30 * 1024 * 1024) return setErr("That image is too big. Try a smaller screenshot.");
+    const f = await shrinkImage(picked, 1600, 0.8); // screenshots only need to stay readable
     if (f.size > 10 * 1024 * 1024) return setErr("That image is bigger than 10 MB. Try a smaller screenshot.");
     setErr("");
     setFile(f);

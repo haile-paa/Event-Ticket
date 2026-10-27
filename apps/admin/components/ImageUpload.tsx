@@ -1,13 +1,14 @@
 "use client";
 
-import { ApiError, Spinner, cn, img } from "@tikit/shared";
+import { ApiError, Spinner, cn, img, shrinkImage } from "@tikit/shared";
 import { ImagePlus, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useAdmin } from "@/lib/admin";
 
 export function useUpload() {
   const { call, toast } = useAdmin();
-  return async (file: File): Promise<string | null> => {
+  return async (original: File): Promise<string | null> => {
+    const file = await shrinkImage(original);
     if (file.size > 10 * 1024 * 1024) {
       toast("That image is bigger than 10 MB", "err");
       return null;

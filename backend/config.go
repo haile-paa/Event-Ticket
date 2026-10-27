@@ -14,7 +14,6 @@ type Config struct {
 	DBName      string
 	AdminPin    string   // empty = admin API is open (dev only!)
 	DevKey      string   // secret key of the developer Studio (customizer). Empty = Studio is switched off
-	UploadDir   string   // where event images and payment proofs are stored
 	CORSOrigins []string // "*" allows everything
 	TrustProxy  bool     // read client IP from X-Forwarded-For
 	SeedDemo    bool     // insert demo events when the database is empty
@@ -74,7 +73,7 @@ func loadConfig() Config {
 	loadDotEnv(".env")
 	origins := strings.Split(env("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002"), ",")
 	for i := range origins {
-		origins[i] = strings.TrimSpace(origins[i])
+		origins[i] = strings.TrimRight(strings.TrimSpace(origins[i]), "/") // "https://site.com/" would never match the browser's Origin header
 	}
 	return Config{
 		Port:        env("PORT", "8080"),
@@ -82,7 +81,6 @@ func loadConfig() Config {
 		DBName:      env("MONGO_DB", "tikit"),
 		AdminPin:    env("ADMIN_PIN", "2468"),
 		DevKey:      env("DEV_KEY", ""),
-		UploadDir:   env("UPLOAD_DIR", "./uploads"),
 		CORSOrigins: origins,
 		TrustProxy:  env("TRUST_PROXY", "false") == "true",
 		SeedDemo:    env("SEED_DEMO", "true") == "true",

@@ -21,12 +21,8 @@ services:
       DEV_KEY: "change-me-long-secret"   # YOUR secret key for the Studio (never share it)
       CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002"
       SEED_DEMO: "true"          # demo events on first run; set to "false" for a real client
-      UPLOAD_DIR: "/data/uploads"
-    volumes:
-      - uploads:/data/uploads
     ports:
       - "8080:8080"
 
 volumes:
   mongo-data:
-  uploads:

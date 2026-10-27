@@ -57,6 +57,6 @@ The **Developer Studio** (`apps/studio`, never deployed to the client) changes e
 ## Production notes
 - Camera scanning requires **HTTPS** (or localhost).
 - Set `CORS_ORIGINS` to your two real website URLs and `NEXT_PUBLIC_API_URL` to the public API URL.
-- Back up the `uploads` folder (payment proofs, logos, event photos) and the database.
+- Back up the database. Event photos, logos and payment proofs are stored inside MongoDB too (collection `files`), so one database backup covers everything. Atlas free tier has 512 MB, so tell clients to upload reasonably sized photos.
 - Run behind a reverse proxy and set `TRUST_PROXY=true` so rate limits see real IPs.
 - Payments are confirmed by a person comparing proof with the account; there is no bank API.

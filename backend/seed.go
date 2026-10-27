@@ -7,8 +7,6 @@ import (
 	"html"
 	"log"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,8 +19,11 @@ import (
 func (a *App) seedDemo() {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
+	// the demo posters are (re)written on every start, so they survive a fresh database or a lost disk;
+	// the demo events themselves are only inserted when the database has no events yet
+	empty := true
 	if n, err := a.events.CountDocuments(ctx, bson.M{}); err != nil || n > 0 {
-		return
+		empty = false
 	}
 
 	now := time.Now()
@@ -66,14 +67,12 @@ func (a *App) seedDemo() {
 		slug := strings.ToLower(strings.Join(strings.FieldsFunc(s.title, func(r rune) bool {
 			return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9')
 		}), "-"))
-		dir := filepath.Join(a.cfg.UploadDir, "seed")
-		_ = os.MkdirAll(dir, 0o755)
 		var gallery []string
 		cover := ""
 		for v := 0; v < 4; v++ {
 			file := fmt.Sprintf("%s-%d.svg", slug, v)
 			svg := posterSVG(s.title, s.category, s.hueA, s.hueB, v)
-			if err := os.WriteFile(filepath.Join(dir, file), []byte(svg), 0o644); err != nil {
+			if err := a.putFile(ctx, "seed/"+file, "image/svg+xml", []byte(svg)); err != nil {
 				log.Printf("seed image: %v", err)
 				continue
 			}
@@ -84,6 +83,9 @@ func (a *App) seedDemo() {
 				gallery = append(gallery, url)
 			}
 		}
+		if !empty {
+			continue
+		}
 		ev := Event{
 			ID: primitive.NewObjectID(), Title: s.title, Description: s.desc, Category: s.category,
 			Venue: s.venue, City: s.city, StartsAt: s.start, EndsAt: s.end, Cover: cover, Gallery: gallery,
@@ -93,7 +95,9 @@ func (a *App) seedDemo() {
 			log.Printf("seed event: %v", err)
 		}
 	}
-	log.Println("Seeded demo events (set SEED_DEMO=false to disable)")
+	if empty {
+		log.Println("Seeded demo events (set SEED_DEMO=false to disable)")
+	}
 }
 
 // posterSVG draws an abstract, colourful poster. Real events use uploaded photos instead.

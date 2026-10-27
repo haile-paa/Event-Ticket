@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -25,6 +24,7 @@ type App struct {
 	orders     *mongo.Collection
 	tickets    *mongo.Collection
 	settings   *mongo.Collection
+	files      *mongo.Collection
 	orderLimit *limiter
 	lookupLim  *limiter
 	loginFails *limiter
@@ -55,14 +55,12 @@ func main() {
 		orders:     db.Collection("orders"),
 		tickets:    db.Collection("tickets"),
 		settings:   db.Collection("settings"),
+		files:      db.Collection("files"),
 		orderLimit: newLimiter(),
 		lookupLim:  newLimiter(),
 		loginFails: newLimiter(),
 	}
 
-	if err := os.MkdirAll(filepath.Join(cfg.UploadDir, "proofs"), 0o755); err != nil {
-		log.Fatalf("create upload dir: %v", err)
-	}
 	app.ensureIndexes()
 	app.ensureSettings()
 	app.loadPin()
@@ -182,15 +180,8 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("PUT /api/studio/pin", dev(a.adminChangePin))
 	mux.HandleFunc("POST /api/studio/upload", dev(a.adminUpload))
 
-	// uploaded files (event images + payment proofs). Names are random, directories are not listable.
-	files := http.StripPrefix("/uploads/", http.FileServer(noListFS{http.Dir(a.cfg.UploadDir)}))
-	mux.HandleFunc("GET /uploads/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		// uploaded SVGs must never be able to run scripts if someone opens them directly
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox")
-		w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
-		files.ServeHTTP(w, r)
-	})
+	// uploaded images (event photos + payment proofs) live in MongoDB; names are random
+	mux.HandleFunc("GET /uploads/", a.serveUpload)
 
 	return a.recoverer(a.securityHeaders(a.cors(mux)))
 }

@@ -31,16 +31,7 @@ function ticketShape() {
   return s;
 }
 
-function drawFace(
-  c1: string,
-  c2: string,
-  c3: string,
-  l1: string,
-  l2: string,
-  sub: string,
-  font: string,
-  sans: string,
-): HTMLCanvasElement {
+function drawFace(c1: string, c2: string, c3: string, l1: string, l2: string, sub: string, font: string, sans: string): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = 1320;
   c.height = 800;
@@ -103,17 +94,7 @@ function drawFace(
   return c;
 }
 
-function TicketMesh({
-  colors,
-  l1,
-  l2,
-  sub,
-}: {
-  colors: [string, string, string];
-  l1: string;
-  l2: string;
-  sub: string;
-}) {
+function TicketMesh({ colors, l1, l2, sub }: { colors: [string, string, string]; l1: string; l2: string; sub: string }) {
   const group = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
 
@@ -143,15 +124,9 @@ function TicketMesh({
 
   const texture = useMemo(() => {
     const cs = getComputedStyle(document.documentElement);
-    const font = (
-      cs.getPropertyValue("--font-display").split(",")[0] || "Helvetica"
-    ).trim();
-    const sans = (
-      cs.getPropertyValue("--font-sans").split(",")[0] || "Helvetica"
-    ).trim();
-    const t = new THREE.CanvasTexture(
-      drawFace(colors[0], colors[1], colors[2], l1, l2, sub, font, sans),
-    );
+    const font = (cs.getPropertyValue("--font-display").split(",")[0] || "Helvetica").trim();
+    const sans = (cs.getPropertyValue("--font-sans").split(",")[0] || "Helvetica").trim();
+    const t = new THREE.CanvasTexture(drawFace(colors[0], colors[1], colors[2], l1, l2, sub, font, sans));
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 8;
     return t;
@@ -163,19 +138,11 @@ function TicketMesh({
     document.fonts?.ready.then(() => {
       if (!alive) return;
       const cs = getComputedStyle(document.documentElement);
-      const font = (
-        cs.getPropertyValue("--font-display").split(",")[0] || "Helvetica"
-      ).trim();
-      const sans = (
-        cs.getPropertyValue("--font-sans").split(",")[0] || "Helvetica"
-      ).trim();
+      const font = (cs.getPropertyValue("--font-display").split(",")[0] || "Helvetica").trim();
+      const sans = (cs.getPropertyValue("--font-sans").split(",")[0] || "Helvetica").trim();
       const c = texture.image as HTMLCanvasElement;
       c.getContext("2d")!.clearRect(0, 0, c.width, c.height);
-      c.getContext("2d")!.drawImage(
-        drawFace(colors[0], colors[1], colors[2], l1, l2, sub, font, sans),
-        0,
-        0,
-      );
+      c.getContext("2d")!.drawImage(drawFace(colors[0], colors[1], colors[2], l1, l2, sub, font, sans), 0, 0);
       texture.needsUpdate = true;
     });
     return () => {
@@ -204,29 +171,13 @@ function TicketMesh({
     <>
       <group ref={group} rotation={[0.05, -0.35, 0.08]}>
         <mesh geometry={body}>
-          <meshStandardMaterial
-            color='#3a2670'
-            emissive='#1b1030'
-            emissiveIntensity={0.6}
-            metalness={0.35}
-            roughness={0.35}
-          />
+          <meshStandardMaterial color="#3a2670" emissive="#1b1030" emissiveIntensity={0.6} metalness={0.35} roughness={0.35} />
         </mesh>
         <mesh geometry={face} position={[0, 0, 0.13]} renderOrder={2}>
-          <meshBasicMaterial
-            map={texture}
-            toneMapped={false}
-            polygonOffset
-            polygonOffsetFactor={-2}
-            polygonOffsetUnits={-2}
-          />
+          <meshBasicMaterial map={texture} toneMapped={false} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
         </mesh>
-        <mesh
-          geometry={face}
-          position={[0, 0, -0.13]}
-          rotation={[0, Math.PI, 0]}
-        >
-          <meshBasicMaterial color='#20123a' />
+        <mesh geometry={face} position={[0, 0, -0.13]} rotation={[0, Math.PI, 0]}>
+          <meshBasicMaterial color="#20123a" />
         </mesh>
       </group>
       <mesh ref={ring} position={[0, 0, -0.4]}>
@@ -241,17 +192,7 @@ function TicketMesh({
   );
 }
 
-export default function HeroScene({
-  colors,
-  line1,
-  line2,
-  sub,
-}: {
-  colors: [string, string, string];
-  line1: string;
-  line2: string;
-  sub: string;
-}) {
+export default function HeroScene({ colors, line1, line2, sub }: { colors: [string, string, string]; line1: string; line2: string; sub: string }) {
   return (
     <Canvas
       dpr={[1, 1.75]}
@@ -263,21 +204,8 @@ export default function HeroScene({
       <pointLight position={[3, 3, 4]} intensity={40} color={colors[1]} />
       <pointLight position={[-4, -2, 3]} intensity={30} color={colors[0]} />
       <TicketMesh colors={colors} l1={line1} l2={line2} sub={sub} />
-      <Sparkles
-        count={70}
-        scale={[7, 4.5, 3]}
-        size={3.2}
-        speed={0.45}
-        color={colors[2]}
-        opacity={0.9}
-      />
-      <Sparkles
-        count={40}
-        scale={[6, 4, 2]}
-        size={2}
-        speed={0.3}
-        color={colors[0]}
-      />
+      <Sparkles count={70} scale={[7, 4.5, 3]} size={3.2} speed={0.45} color={colors[2]} opacity={0.9} />
+      <Sparkles count={40} scale={[6, 4, 2]} size={2} speed={0.3} color={colors[0]} />
     </Canvas>
   );
 }

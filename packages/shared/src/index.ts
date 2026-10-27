@@ -6,3 +6,4 @@ export * from "./ui";
 export * from "./site";
 export * from "./SiteProvider";
 export * from "./TicketCard";
+export * from "./image";
